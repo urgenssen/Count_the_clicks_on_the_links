@@ -1,5 +1,5 @@
 # Get_forecast_from_terminal
-The script can make short links using API of bit.ly and write it in terminal by user's query and write total clicks on short links by user's query.
+The script makes short links using API of bit.ly and writes it in terminal by user's query or counts total clicks on short links by user's query.
 
 # How to start
 
