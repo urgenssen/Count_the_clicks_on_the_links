@@ -1,65 +1,72 @@
 import os
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from dotenv import load_dotenv
-load_dotenv()
-
-
-user_token = os.environ['TOKEN']
-user_input = input("Введите ссылку: ")
 
 
 def shorten_link(token, url):
 
-    bitly = "https://api-ssl.bitly.com/v4/bitlinks"
+    bitly_url = "https://api-ssl.bitly.com/v4/bitlinks"
 
     headers = {"Authorization": "Bearer {}".format(token)}
     payload = {"long_url": url}
 
-    testing_url = requests.get(payload['long_url'], headers=headers)
-    testing_url.raise_for_status()
-
-    response = requests.post(bitly, headers=headers, json=payload)
+    response = requests.post(bitly_url, headers=headers, json=payload)
     response.raise_for_status()
 
-    bitlink = response.json()['link']
+    bitlink = response.json()["link"]
     return bitlink
 
 
 def clicks_count(token, bitlink):
 
     headers = {"Authorization": "Bearer {}".format(token)}
-    payload = {"long_url": bitlink}
 
-    testing_url = requests.get(payload['long_url'], headers=headers)
-    testing_url.raise_for_status()
+    bitlink_parsed = urlparse(bitlink)
 
-    parsed = urlparse(bitlink)
-    bitlink_short = parsed.hostname + parsed.path
-
-    total_clicks_url = "https://api-ssl.bitly.com/v4/bitlinks/" + \
-        f"{bitlink_short}/clicks/summary"
+    total_clicks_url = f"https://api-ssl.bitly.com/v4/bitlinks/\
+        {bitlink_parsed.hostname}{bitlink_parsed.path}/clicks/summary"
+    total_clicks_url = unquote(total_clicks_url).replace(" ", "")
 
     response = requests.get(total_clicks_url, headers=headers)
     response.raise_for_status()
 
-    total_clicks = response.json()['total_clicks']
+    total_clicks = response.json()["total_clicks"]
     return total_clicks
 
 
-def is_bitlink(url):
+def is_bitlink(token, url):
 
-    parsed = urlparse(url)
+    bitlink_info = "https://api-ssl.bitly.com/v4/bitlinks/"
+    url_parsed = urlparse(url)
+    bitlink_info_user = f"{bitlink_info}{url_parsed.hostname}{url_parsed.path}"
 
-    if parsed.hostname == "bit.ly":
-        return True
-    else:
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        response = requests.get(bitlink_info_user, headers=headers)
+        response.raise_for_status()
+
+        if response.json()["long_url"]:
+            return True
+        else:
+            return False
+
+    except (requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError,
+            requests.exceptions.MissingSchema,
+            requests.exceptions.InvalidURL):
         return False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    if is_bitlink(user_input):
+    load_dotenv()
+
+    user_token = os.environ["BITLY_TOKEN"]
+    user_input = input("Введите ссылку: ")
+
+    if is_bitlink(user_token, user_input):
         try:
             total_clicks = clicks_count(user_token, user_input)
             print("По вашей ссылке прошли: {} раз(а)".format(total_clicks))
