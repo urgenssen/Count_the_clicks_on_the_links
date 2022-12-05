@@ -1,6 +1,6 @@
 import os
 import requests
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 
@@ -20,13 +20,13 @@ def shorten_link(token, url):
 
 def clicks_count(token, bitlink):
 
+    bitly_url = "https://api-ssl.bitly.com/v4/bitlinks"
+
     headers = {"Authorization": "Bearer {}".format(token)}
 
-    bitlink_parsed = urlparse(bitlink)
+    no_scheme_bitlink = f"{urlparse(bitlink).hostname}{urlparse(bitlink).path}"
 
-    total_clicks_url = f"https://api-ssl.bitly.com/v4/bitlinks/\
-        {bitlink_parsed.hostname}{bitlink_parsed.path}/clicks/summary"
-    total_clicks_url = unquote(total_clicks_url).replace(" ", "")
+    total_clicks_url = f"{bitly_url}/{no_scheme_bitlink}/clicks/summary"
 
     response = requests.get(total_clicks_url, headers=headers)
     response.raise_for_status()
@@ -37,26 +37,14 @@ def clicks_count(token, bitlink):
 
 def is_bitlink(token, url):
 
-    bitlink_info = "https://api-ssl.bitly.com/v4/bitlinks/"
-    url_parsed = urlparse(url)
-    bitlink_info_user = f"{bitlink_info}{url_parsed.hostname}{url_parsed.path}"
+    bitly_url = "https://api-ssl.bitly.com/v4/bitlinks/"
+    no_scheme_url = f"{urlparse(url).hostname}{urlparse(url).path}"
+    full_checked_url = f"{bitly_url}{no_scheme_url}"
 
     headers = {"Authorization": f"Bearer {token}"}
 
-    try:
-        response = requests.get(bitlink_info_user, headers=headers)
-        response.raise_for_status()
-
-        if response.json()["long_url"]:
-            return True
-        else:
-            return False
-
-    except (requests.exceptions.ConnectionError,
-            requests.exceptions.HTTPError,
-            requests.exceptions.MissingSchema,
-            requests.exceptions.InvalidURL):
-        return False
+    response = requests.get(full_checked_url, headers=headers)
+    return response.ok
 
 
 if __name__ == "__main__":
