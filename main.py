@@ -24,7 +24,8 @@ def clicks_count(token, bitlink):
 
     headers = {"Authorization": "Bearer {}".format(token)}
 
-    no_scheme_bitlink = f"{urlparse(bitlink).hostname}{urlparse(bitlink).path}"
+    parsed_bitlink = urlparse(bitlink)
+    no_scheme_bitlink = f"{parsed_bitlink.hostname}{parsed_bitlink.path}"
 
     total_clicks_url = f"{bitly_url}/{no_scheme_bitlink}/clicks/summary"
 
@@ -38,7 +39,10 @@ def clicks_count(token, bitlink):
 def is_bitlink(token, url):
 
     bitly_url = "https://api-ssl.bitly.com/v4/bitlinks/"
-    no_scheme_url = f"{urlparse(url).hostname}{urlparse(url).path}"
+
+    parsed_url = urlparse(url)
+    no_scheme_url = f"{parsed_url.hostname}{parsed_url.path}"
+
     full_checked_url = f"{bitly_url}{no_scheme_url}"
 
     headers = {"Authorization": f"Bearer {token}"}
